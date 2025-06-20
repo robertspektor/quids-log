@@ -11,19 +11,11 @@ use Illuminate\Support\Facades\Queue;
 
 class QuidsLogsChannel
 {
-    protected QuidsLogsClient $client;
-    protected array $config;
-
-    public function __construct(QuidsLogsClient $client, array $config = [])
-    {
-        $this->client = $client;
-        $this->config = $config;
-    }
-
     public function __invoke(array $config): Logger
     {
+        $client = app(QuidsLogsClient::class);
         $logger = new Logger('quids');
-        $handler = new QuidsLogsHandler($this->client, $config);
+        $handler = new QuidsLogsHandler($client, $config);
         
         $logger->pushHandler($handler);
         
@@ -100,8 +92,17 @@ class QuidsLogsHandler extends AbstractProcessingHandler
         $context = $this->enrichContext($record->context);
         $extra = $this->enrichExtra($record->extra);
 
+        // Convert Monolog level to string
+        $level = $record->level->getName();
+        if (method_exists($record->level, 'toPsrLogLevel')) {
+            $level = $record->level->toPsrLogLevel();
+        }
+        
+        // Ensure level is lowercase for API validation
+        $level = strtolower($level);
+
         return [
-            'level' => $record->level->getName(),
+            'level' => $level,
             'message' => $record->message,
             'environment' => config('quids-logs.environment', 'production'),
             'context' => $context,

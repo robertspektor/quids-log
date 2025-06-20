@@ -34,10 +34,8 @@ class QuidsLogsServiceProvider extends ServiceProvider
 
         // Register custom log channel
         Log::extend('quids', function ($app, $config) {
-            return new QuidsLogsChannel(
-                $app->make(QuidsLogsClient::class),
-                $config
-            );
+            $channel = new QuidsLogsChannel();
+            return $channel($config);
         });
 
         // Auto-configure if API key is set
