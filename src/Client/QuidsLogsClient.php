@@ -42,6 +42,11 @@ class QuidsLogsClient
             return false;
         }
 
+        // Validate log structure
+        if (!$this->validateLogs($logs)) {
+            return false;
+        }
+
         // Add request ID for tracking
         $requestId = Str::uuid()->toString();
 
@@ -52,6 +57,32 @@ class QuidsLogsClient
         ];
 
         return $this->sendWithRetry($payload, $requestId);
+    }
+
+    protected function validateLogs(array $logs): bool
+    {
+        foreach ($logs as $log) {
+            if (!is_array($log)) {
+                return false;
+            }
+            
+            // Check for required fields: level and message
+            if (!isset($log['level']) || !isset($log['message'])) {
+                return false;
+            }
+            
+            // Validate level is a string
+            if (!is_string($log['level']) || empty($log['level'])) {
+                return false;
+            }
+            
+            // Validate message is a string
+            if (!is_string($log['message']) || empty($log['message'])) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     protected function prepareLogs(array $logs): array
